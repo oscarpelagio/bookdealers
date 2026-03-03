@@ -1,0 +1,36 @@
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: postgres_db
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env
+    ports:
+      - "5433:5432"
+
+  back:
+    container_name: back
+    build: ./backend
+    volumes:
+      - ./backend:/app
+    restart: always
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - z3950
+    env_file:
+      - ./.env
+
+  z3950:
+    container_name: z3950
+    build: ./z3950
+    restart: always
+    ports:
+      - "8001:8001"    
+    volumes:
+      - ./z3950:/app
+volumes:
+  postgres_data:

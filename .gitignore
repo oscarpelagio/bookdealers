@@ -1,0 +1,83 @@
+# ------------------------------------------------
+# 1. SEGURIDAD
+# ------------------------------------------------
+.env
+.env.local
+.env.*
+# Excepción:
+!.env.example
+
+# ------------------------------------------------
+# 2. PYTHON (Backend & Frontend)
+# ------------------------------------------------
+# Bytecode compilado
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Entornos virtuales locales
+venv/
+.venv/
+env/
+.env/
+
+# Distribución y empaquetado
+dist/
+build/
+*.egg-info/
+
+# Librerías de testing y calidad
+.pytest_cache/
+.coverage
+htmlcov/
+.mypy_cache/
+
+# ------------------------------------------------
+# 3. SISTEMA OPERATIVO (Mac & Windows)
+# ------------------------------------------------
+# Archivos de metadatos de Mac
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Miniaturas de Windows
+Thumbs.db
+
+# ------------------------------------------------
+# 4. EDITOR (VS Code)
+# ------------------------------------------------
+# Configuraciones locales de usuario
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+!.vscode/launch.json
+!.vscode/extensions.json
+
+# ------------------------------------------------
+# 5. DOCKER & BASE DE DATOS
+# ------------------------------------------------
+postgres_data/
+mysql_data/
+
+# Archivos override de docker (configuraciones locales temporales)
+docker-compose.override.yml
+
+# ------------------------------------------------
+# 6. iOS / XCODE
+# ------------------------------------------------
+## User settings
+xcuserdata/
+*.xcuserstate
+*.osactivitylog
+derivedData/
+
+# ------------------------------------------------
+# 7. VARIOS
+# ------------------------------------------------
+# Logs de errores
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.ruff_cache/
