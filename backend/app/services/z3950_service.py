@@ -5,7 +5,6 @@ Servei per consultar disponibilitat al catàleg ALADI via Z39.50.
 from app.adapters import Z3950Adapter
 from app.clients import Z3950Client
 from app.crud import BookRepository, AvailabilityRepository
-from app.utils import NormalizationUtils
 
 class Z3950Service:
     def __init__(

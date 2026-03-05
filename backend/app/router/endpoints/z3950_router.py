@@ -3,7 +3,6 @@
 from fastapi import APIRouter, Depends
 from app.services import Z3950Service
 from app.router import get_z3950_service
-import httpx
 
 router = APIRouter()
 
