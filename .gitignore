@@ -48,6 +48,7 @@ Thumbs.db
 # 4. EDITOR (VS Code)
 # ------------------------------------------------
 # Configuraciones locales de usuario
+.vscode/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json

@@ -8,11 +8,11 @@ Sistema de tracking de libros personales con búsqueda en Google Books y consult
 ┌─────────────────────────────────────────────────────────────────┐
 │                        Docker Compose                           │
 │                                                                 │
-│  ┌──────────┐     ┌──────────────┐     ┌───────────────────┐   │
-│  │ postgres │◄────│   backend    │────►│      z3950        │   │
-│  │   :5432  │     │    :8000     │     │      :8001        │   │
-│  │          │     │   FastAPI    │     │  FastAPI + yaz    │   │
-│  └──────────┘     └──────┬───────┘     └────────┬──────────┘   │
+│  ┌──────────┐     ┌──────────────┐     ┌───────────────────┐    │
+│  │ postgres │◄────│   backend    │────►│      z3950        │    │
+│  │   :5432  │     │    :8000     │     │      :8001        │    │
+│  │          │     │   FastAPI    │     │  FastAPI + yaz    │    │
+│  └──────────┘     └──────┬───────┘     └────────┬──────────┘    │
 │                          │                      │               │
 └──────────────────────────┼──────────────────────┼───────────────┘
                            │                      │
@@ -62,10 +62,10 @@ Cliente                Backend                  Google Books
   ├─────────────────────►│                          │
   │                      │  parse CSV               │
   │                      │  for each book:          │
-  │                      │    check cache            │
+  │                      │    check cache           │
   │                      │    if miss:              │
   │                      │      rate_limit (1/sec)  │
-  │                      │      search Google ──────►│
+  │                      │      search Google ─────►│
   │                      │      ◄───────────────────┤
   │                      │      persist + cache     │
   │                      │  end loop                │
@@ -80,20 +80,20 @@ Cliente          Backend              Z3950 Service          ALADI
   │  ?book_id=78   │                      │                    │
   ├───────────────►│                      │                    │
   │                │  get_availability()  │                    │
-  │                ├──► DB               │                    │
-  │                │◄── hit? → return    │                    │
+  │                ├──► DB                │                    │
+  │                │◄── hit? → return     │                    │
   │                │                      │                    │
-  │                │  miss → get book    │                    │
-  │                ├──► DB               │                    │
+  │                │  miss → get book     │                    │
+  │                ├──► DB                │                    │
   │                │                      │                    │
-  │                │  search_z3950()     │                    │
+  │                │  search_z3950()      │                    │
   │                ├─────────────────────►│                    │
   │                │                      │  yaz-client ──────►│
-  │                │                      │  ◄─── MARC data ──┤
-  │                │  ◄── parsed locs ───┤                    │
+  │                │                      │  ◄─── MARC data  ──┤
+  │                │  ◄── parsed locs  ───┤                    │
   │                │                      │                    │
   │                │  save_availability() │                    │
-  │                ├──► DB               │                    │
+  │                ├──► DB                │                    │
   │                │                      │                    │
   │  ◄── JSON ─────┤                      │                    │
 ```

@@ -20,30 +20,22 @@ class BookRepository:
             )
             
             if existing_book:
-                # Modifica el objeto existente en memoria
                 book = await self._merge(existing_book, book_data)
             else: 
-                # Crea un objeto nuevo
                 book = Book.model_validate(book_data)
 
             self.db.add(book)
             
-            # Al guardarlo en el diccionario, si ya había un libro igual en este 
-            # mismo lote, se sobrescribe con la versión más reciente/mergeada.
             key = (book.normal_title, book.normal_author)
             saved_books_dict[key] = book
 
-        # Ahora hacemos commit para que se generen los IDs de los libros nuevos
         await self.db.commit()
-
-        # Extraemos solo los valores (los libros únicos) del diccionario
         saved_books = list(saved_books_dict.values())
 
         for book in saved_books:
             await self.db.refresh(book)
 
         return saved_books
-    
     
     async def insert_book(self, book: Book) -> Book:
         """

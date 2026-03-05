@@ -50,25 +50,25 @@ app/
 
 ```
                     ┌─────────────────────────────────┐
-                    │          Router Layer            │
-                    │  endpoints/ (thin, no logic)     │
+                    │          Router Layer           │
+                    │  endpoints/ (thin, no logic)    │
                     └──────────────┬──────────────────┘
                                    │ Depends()
                     ┌──────────────▼──────────────────┐
-                    │         Service Layer            │
-                    │  SearchService, Z3950Service     │
-                    │  (orchestration, rate limiting)  │
+                    │         Service Layer           │
+                    │  SearchService, Z3950Service    │
+                    │  (orchestration, rate limiting) │
                     └───┬──────────┬──────────┬───────┘
                         │          │          │
-              ┌─────────▼──┐ ┌────▼────┐ ┌───▼──────────┐
+              ┌─────────▼──┐ ┌─────▼───┐ ┌────▼─────────┐
               │ Repository │ │ Client  │ │   Adapter    │
               │  (DB ops)  │ │ (HTTP)  │ │ (transform)  │
               └─────┬──────┘ └────┬────┘ └──────────────┘
                     │             │
-              ┌─────▼──┐   ┌─────▼───────┐
+              ┌─────▼───┐   ┌─────▼───────┐
               │ Postgres│   │ Google API  │
               │  (async)│   │ Z3950 proxy │
-              └────────┘   └─────────────┘
+              └─────────┘   └─────────────┘
 ```
 
 ## Dependency Injection

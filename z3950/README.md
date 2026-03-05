@@ -37,16 +37,16 @@ Backend                    Z3950 Service              yaz-client            ALAD
   │                            │  spawn subprocess        │                   │
   │                            ├─────────────────────────►│                   │
   │                            │                          │                   │
-  │                            │  stdin commands:          │                   │
+  │                            │  stdin commands:         │                   │
   │                            │  base INNOPAC            │                   │
-  │                            │  find @and @attr...      │  Z39.50 query    │
+  │                            │  find @and @attr...      │  Z39.50 query     │
   │                            │  format opac             ├──────────────────►│
-  │                            │  show 1+50               │  ◄── MARC data ──┤
+  │                            │  show 1+50               │  ◄── MARC data  ──┤
   │                            │  exit                    │                   │
   │                            │                          │                   │
   │                            │  ◄── stdout (MARC text) ─┤                   │
   │                            │                          │                   │
-  │  ◄── {"response": "..."}──┤                          │                   │
+  │  ◄── {"response": "..."} ──┤                          │                   │
 ```
 
 ## Protocolo Z39.50 — Commands
