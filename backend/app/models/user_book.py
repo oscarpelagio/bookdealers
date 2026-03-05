@@ -16,5 +16,5 @@ class UserBook(SQLModel, table=True):
     rating: int | None = Field(default=None, ge=1, le=5)
     review_text: str | None = Field(default=None, max_length=5000)
     is_favorite: bool = Field(default=False)
-    created_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
+    created_at: datetime = Field(nullable = True, default_factory=datetime.utcnow)
+    updated_at: datetime = Field(nullable = True, default_factory=datetime.utcnow)

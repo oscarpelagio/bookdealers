@@ -10,7 +10,6 @@ class GoogleBooksClient:
     BASE_URL = "https://www.googleapis.com/books/v1/volumes"
     _client: httpx.AsyncClient | None = None
 
-
     def __init__(self):
         """Inicialitza el client amb la API key de configuració."""
         self.api_key = settings.google_api_key

@@ -1,3 +1,4 @@
+# ------- IMPORTS --------
 from fastapi import Depends
 from functools import lru_cache
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -9,10 +10,14 @@ from app.core.db import async_session
 from app.crud import BookRepository, SearchRepository, AvailabilityRepository
 from app.services import SearchService, Z3950Service
 
+
+# ------- BASE DE DATOS --------
 async def get_db() -> AsyncGenerator[AsyncSession]:
     async with async_session() as session:
         yield session
 
+
+# ------- REPOSITORIOS --------
 def get_book_repository(
     db: AsyncSession = Depends(get_db),
 ) -> BookRepository:
@@ -28,20 +33,28 @@ def get_search_repository(
 ) -> SearchRepository:
     return SearchRepository(db)
 
+
+# ------- CLIENTES --------
 @lru_cache()
 def get_google_client() -> GoogleBooksClient:
     return GoogleBooksClient()
 
+@lru_cache()
 def get_z3950_client() -> Z3950Client:
     return Z3950Client()
 
+
+# ------- ADAPTADORES --------
 @lru_cache()
 def get_google_adapter() -> GoogleBooksAdapter:
     return GoogleBooksAdapter()
 
+@lru_cache()
 def get_z3950_adapter() -> Z3950Adapter:
     return Z3950Adapter()
 
+
+# ------- SERVICIOS --------
 def get_book_service(
     book_repo: BookRepository = Depends(get_book_repository),
     search_repo: SearchRepository = Depends(get_search_repository),
@@ -58,5 +71,7 @@ def get_z3950_service(
 ) -> Z3950Service:
     return Z3950Service(book_repo, availability_repo, client, adapter)
 
+
+# ------- USER (TO-DO) --------
 def get_user() -> int:
     return 1

@@ -30,21 +30,18 @@ class SearchRepository:
         existing_search = result.first()
         if not existing_search:
             return None
-        statement = (
-            select(SearchRelation)
-            .where(SearchRelation.id_search == existing_search.id)
-            .limit(max_results)
-        )
-        result = await self.db.exec(statement)
-        relations = result.all()
 
-        books = []
-        for rel in relations:
-            book = await self.db.get(Book, rel.id_book)
-            if book is not None:
-                books.append(book)
+        statement = select(SearchRelation).where(SearchRelation.id_search == existing_search.id).limit(max_results)
+        relations = (await self.db.exec(statement)).all()
 
-        return books if books else None
+        if not relations:
+            return None
+
+        # 2. Extraemos los IDs y buscamos todos los libros de golpe con IN_
+        book_ids = [rel.id_book for rel in relations]
+        books_statement = select(Book).where(Book.id.in_(book_ids))
+        books = (await self.db.exec(books_statement)).all()
+        return list(books)
 
     async def _insert_search_(self, query: str) -> Search:
         normalized_query = NormalizationUtils.normalize_text(query)

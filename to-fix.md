@@ -222,3 +222,6 @@ Loguea cada query SQL a stdout. Bien para debug pero ruidoso en producción.
 | **Alto** | 5, 6, 7, 8, 9 | Reducir queries N+1 con JOINs y batch operations |
 | **Medio** | 10-16 | Validaciones, error handling, response models |
 | **Bajo** | 17-22 | Estilo, configuración, versiones |
+
+
+**Done:** Crical : 2 - 3 - 1 -

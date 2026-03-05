@@ -13,5 +13,5 @@ class User(SQLModel, table=True):
     bio: str | None = Field(default=None, max_length=500)
     avatar_url: str | None = Field(default=None, max_length=500)
     is_active: bool = Field(default=True)
-    created_at : datetime = Field(nullable = True, default_factory=lambda: datetime.now(timezone.utc))
-    updated_at: datetime = Field(nullable = True, default_factory=lambda: datetime.now(timezone.utc))
+    created_at : datetime = Field(nullable = True, default_factory=datetime.utcnow)
+    updated_at: datetime = Field(nullable = True, default_factory=datetime.utcnow)

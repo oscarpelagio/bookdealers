@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlmodel import Field, SQLModel, UniqueConstraint
 
 class BookEstablishment(SQLModel, table=True):
@@ -11,5 +11,5 @@ class BookEstablishment(SQLModel, table=True):
     language: str = Field(index=True)
     status: str | None = Field(default=None, index=True)
     queue: int | None = Field(default=None)
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(nullable = True, default_factory=datetime.utcnow)
+    updated_at: datetime = Field(nullable = True, default_factory=datetime.utcnow)
