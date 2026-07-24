@@ -1,0 +1,43 @@
+[
+  {
+    "name": "todostuslibros",
+    "service": "todostuslibros",
+    "url": "https://www.todostuslibros.com/libro/disponibilidad/",
+    "port": null,
+    "base": null,
+    "link": null
+  },
+  {
+    "name": "catalunya",
+    "service": "ebiblio",
+    "url": "https://aladi2ebiblio.diba.cat/index_jsonp_v3.php",
+    "port": null,
+    "base": null,
+    "link": null
+  },
+  {
+    "name": "aladi",
+    "service": "z3950",
+    "url": "aladi.diba.cat",
+    "port": 210,
+    "base": "INNOPAC",
+    "link": "https://aladi.diba.cat/record=###~S171*cat"
+
+  },
+  {
+    "name": "argus",
+    "service": "z3950",
+    "url": "elmeuargus.biblioteques.gencat.cat",
+    "port": 210,
+    "base": "INNOPAC",
+    "link": "https://elmeuargus.biblioteques.gencat.cat/record=###~S146*cat"
+  },
+  {
+    "name": "cabib",
+    "service": "z3950",
+    "url": "cabib.uib.es",
+    "port": 210,
+    "base": "INNOPAC",
+    "link": null
+  }
+]

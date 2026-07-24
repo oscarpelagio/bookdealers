@@ -8,8 +8,12 @@ router = APIRouter()
 @router.get("/search")
 async def search(
     title: str, 
-    author: str, 
+    author: str,
+    url: str,
+    port: int,
+    base: str,
     service: Service = Depends(get_service)
-) -> dict :
-    raw = await service.search_book(title, author)
-    return {"response": raw}
+) :
+    raw = await service.search_book(title, author, url, port, base)
+    print(raw)
+    return raw

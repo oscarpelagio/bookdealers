@@ -8,3 +8,5 @@ httpx
 alembic
 python-multipart
 asyncpg
+beautifulsoup4
+apscheduler

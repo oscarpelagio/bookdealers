@@ -1,6 +1,6 @@
 """Repositori per a operacions CRUD de llibres."""
 
-from sqlmodel import select
+from sqlmodel import select, insert
 from sqlmodel.ext.asyncio.session import AsyncSession
 
 from app.models import Book
@@ -38,24 +38,19 @@ class BookRepository:
         return saved_books
     
     async def insert_book(self, book: Book) -> Book:
-        """
-        Crea un llibre nou. Si ja existeix (títol+autor normalitzats), retorna l'existent.
-        """
-        # Comprova si el llibre ja existeix per títol+autor normalitzats
-        existing_book = await self.find_by_title_author(
-            book.normal_title, 
-            book.normal_author
-        )
-        if existing_book:
-            book = await self._merge(existing_book, book)
-        
-        else: 
-            book = Book.model_validate(book)
+        book_data = book.model_dump(exclude_unset=True)
 
-        self.db.add(book)
-        await self.db.commit()
-        await self.db.refresh(book)
-        return book
+        stmt = insert(Book).values(**book_data).on_conflict_do_nothing(
+                index_elements=["normal_title", "normal_author"]
+            ).returning(Book)
+            
+        inserted_book = (await self.db.exec(stmt)).first() 
+
+        if inserted_book:
+            await self.db.commit()
+            return inserted_book
+            
+        return await self.find_by_title_author(book.normal_title, book.normal_author)
 
     async def find_by_title_author(self, normal_title: str, normal_author: str) -> Book | None:
         """

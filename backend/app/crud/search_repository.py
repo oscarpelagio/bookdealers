@@ -1,4 +1,4 @@
-"""Repositori per a operacions CRUD de llibres."""
+"""Repository for book CRUD operations."""
 
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
@@ -37,7 +37,7 @@ class SearchRepository:
         if not relations:
             return None
 
-        # 2. Extraemos los IDs y buscamos todos los libros de golpe con IN_
+        # 2. Extract IDs and fetch all books at once with IN_
         book_ids = [rel.id_book for rel in relations]
         books_statement = select(Book).where(Book.id.in_(book_ids))
         books = (await self.db.exec(books_statement)).all()

@@ -1,13 +1,13 @@
 # BookTracker
 
-Sistema de tracking de libros personales con búsqueda en Google Books y consulta de disponibilidad en bibliotecas catalanas (red ALADI) via protocolo Z39.50.
+Personal book tracking system and availability checks in Catalan libraries (ALADI network) via the Z39.50 protocol.
 
-## Arquitectura
+## Architecture
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        Docker Compose                           │
-│                                                                 │
+┌──────────────────────────────────────────────────────────────────┐
+│                        Docker Compose                            │
+│                                                                  │
 │  ┌──────────┐     ┌──────────────┐     ┌───────────────────┐    │
 │  │ postgres │◄────│   backend    │────►│      z3950        │    │
 │  │   :5432  │     │    :8000     │     │      :8001        │    │
@@ -20,22 +20,40 @@ Sistema de tracking de libros personales con búsqueda en Google Books y consult
                     │ Google Books │      │  ALADI Z39.50  │
                     │     API      │      │   Catalog      │
                     └──────────────┘      └────────────────┘
+                           │                      │
+                           │              ┌───────▼────────┐
+                           │              │ eBiblio        │
+                           │              │ (Catalan libs) │
+                           │              └────────────────┘
+                           │                      │
+                           │              ┌───────▼──────────┐
+                           │              │ Todostuslibros   │
+                           │              │ (Booksellers)    │
+                           └──────────────└──────────────────┘
 ```
 
-## Servicios
+## Services
 
-| Servicio | Puerto | Descripción |
-|----------|--------|-------------|
-| **backend** | 8000 | API principal — búsqueda, import CSV, persistencia |
-| **z3950** | 8001 | Proxy Z39.50 — consulta disponibilidad en bibliotecas |
-| **postgres** | 5432 (interno) / 5433 (host) | Base de datos PostgreSQL 15 |
+| Service | Port | Description |
+|---------|------|-------------|
+| **backend** | 8000 | Main API — search, CSV import, availability queries |
+| **z3950** | 8001 | Z39.50 proxy — ALADI catalog availability |
+| **postgres** | 5432 (internal) / 5433 (host) | PostgreSQL 15 database |
 
-## Flujos principales
+## Availability Services
 
-### 1. Búsqueda de libros (`GET /search/by-title`)
+| Service | Source | Rate Limit | Cache |
+|---------|--------|------------|-------|
+| **Z39.50** | ALADI catalog (yaz-client) | 1 req/sec (shared) | 24h |
+| **eBiblio** | Catalan library network | 1 req/sec (shared) | 24h |
+| **Todostuslibros** | Spanish booksellers | 1 req/sec (shared) | 24h |
+
+## Main flows
+
+### 1. Book search (`GET /search/by-title`)
 
 ```
-Cliente                Backend                  Google Books
+Client                Backend                  Google Books
   │                      │                          │
   │  ?title=X&author=Y   │                          │
   ├─────────────────────►│                          │
@@ -53,10 +71,10 @@ Cliente                Backend                  Google Books
   │  ◄── JSON books ─────┤                          │
 ```
 
-### 2. Import CSV Goodreads (`POST /import/goodreads-csv`)
+### 2. Goodreads CSV import (`POST /import/goodreads-csv`)
 
 ```
-Cliente                Backend                  Google Books
+Client                Backend                  Google Books
   │                      │                          │
   │  CSV file upload     │                          │
   ├─────────────────────►│                          │
@@ -72,45 +90,46 @@ Cliente                Backend                  Google Books
   │  ◄── JSON books ─────┤                          │
 ```
 
-### 3. Disponibilidad bibliotecas (`GET /availability/search`)
+### 3. Library availability (`GET /availability/{service}`)
+
+Supported services: `/availability/z3950`, `/availability/ebiblio`, `/availability/todostuslibros`
 
 ```
-Cliente          Backend              Z3950 Service          ALADI
-  │                │                      │                    │
-  │  ?book_id=78   │                      │                    │
-  ├───────────────►│                      │                    │
-  │                │  get_availability()  │                    │
-  │                ├──► DB                │                    │
-  │                │◄── hit? → return     │                    │
-  │                │                      │                    │
-  │                │  miss → get book     │                    │
-  │                ├──► DB                │                    │
-  │                │                      │                    │
-  │                │  search_z3950()      │                    │
-  │                ├─────────────────────►│                    │
-  │                │                      │  yaz-client ──────►│
-  │                │                      │  ◄─── MARC data  ──┤
-  │                │  ◄── parsed locs  ───┤                    │
-  │                │                      │                    │
-  │                │  save_availability() │                    │
-  │                ├──► DB                │                    │
-  │                │                      │                    │
-  │  ◄── JSON ─────┤                      │                    │
+Client          Backend              Service              External
+  │                │                    │                     │
+  │  ?book_id=78   │                    │                     │
+  ├───────────────►│                    │                     │
+  │                │  get_availability()│                     │
+  │                ├──► DB query        │                     │
+  │                │◄── cached < 24h? ──┤                     │
+  │                │  YES  ◄─────────────────────────────────┐
+  │                │  return cached (no external call)       │
+  │                │                                        │
+  │                │  NO → check semaphore (1 concurrent)   │
+  │                ├────────────────────────────────────┐   │
+  │                │    async with _semaphore:         │   │
+  │                │    call external service ──────────┼──►│
+  │                │    ◄──────── response ────────────┐│   │
+  │                │                                   ││   │
+  │                │  save to DB (expires in 24h)     ││   │
+  │                ├──► DB write ◄──────────────────────┘   │
+  │                │                                        │
+  │  ◄── JSON ─────┤                                        │
 ```
 
-## Stack tecnológico
+## Tech stack
 
-| Capa | Tecnología |
-|------|-----------|
+| Layer | Technology |
+|-------|------------|
 | API Framework | FastAPI (async) |
 | ORM | SQLModel + SQLAlchemy (async) |
-| Base de datos | PostgreSQL 15 + asyncpg |
-| Migraciones | Alembic |
+| Database | PostgreSQL 15 + asyncpg |
+| Migrations | Alembic |
 | HTTP Client | httpx (async) |
 | Z39.50 | yaz-client (CLI wrapper) |
-| Contenedores | Docker Compose |
+| Containers | Docker Compose |
 
-## Modelo de datos
+## Data model
 
 ```
 ┌─────────────┐     ┌────────────────┐     ┌────────────────┐
@@ -147,45 +166,49 @@ Cliente          Backend              Z3950 Service          ALADI
 ## Quick Start
 
 ```bash
-# 1. Configurar variables de entorno
+# 1. Configure environment variables
 cp .env.example .env
-# Editar .env con credenciales de PostgreSQL y Google API key
+# Edit .env with PostgreSQL credentials and Google API key
 
-# 2. Levantar servicios
+# 2. Start services
 make build
 
-# 3. Ejecutar migraciones
+# 3. Run migrations
 make migrate
 
-# 4. Probar
+# 4. Test
 curl "http://localhost:8000/"
-curl "http://localhost:8000/search/by-title?title=don+quijote&author=cervantes"
-curl "http://localhost:8000/availability/search?book_id=1"
+curl "http://localhost:8000/search/by-title?title=don+quixote&author=cervantes"
+curl "http://localhost:8000/availability/z3950?book_id=1&catalog=aladi"
+curl "http://localhost:8000/availability/ebiblio?book_id=1&catalog=ebiblio"
+curl "http://localhost:8000/availability/todostuslibros?book_id=1"
 ```
 
 ## Makefile
 
-| Comando | Descripción |
+| Command | Description |
 |---------|-------------|
-| `make build` | Build + up de todos los contenedores |
-| `make up` | Levantar contenedores existentes |
-| `make down` | Parar contenedores |
-| `make migrate` | Ejecutar migraciones Alembic |
-| `make new-migration m="descripcion"` | Crear nueva migración |
-| `make migration-history` | Ver historial de migraciones |
+| `make build` | Build + up all containers |
+| `make up` | Start existing containers |
+| `make down` | Stop containers |
+| `make migrate` | Run Alembic migrations |
+| `make new-migration m="description"` | Create a new migration |
+| `make migration-history` | View migration history |
 
 ## Endpoints
 
-| Método | Ruta | Descripción |
-|--------|------|-------------|
+| Method | Route | Description |
+|--------|-------|-------------|
 | `GET` | `/` | Health check |
-| `GET` | `/search/by-title` | Buscar libros por título y/o autor |
-| `POST` | `/import/goodreads-csv` | Importar CSV de Goodreads |
-| `GET` | `/availability/search` | Consultar disponibilidad en bibliotecas |
+| `GET` | `/search/by-title` | Search books by title and/or author |
+| `POST` | `/import/goodreads-csv` | Import Goodreads CSV |
+| `GET` | `/availability/z3950` | Check availability in ALADI libraries (cached 24h) |
+| `GET` | `/availability/ebiblio` | Check availability in Catalan libraries (cached 24h) |
+| `GET` | `/availability/todostuslibros` | Check availability at booksellers (cached 24h) |
 
-## Documentación API
+## API documentation
 
-Con los servicios levantados:
+With services running:
 - **Swagger UI**: http://localhost:8000/docs
 - **ReDoc**: http://localhost:8000/redoc
 - **Z39.50 health**: http://localhost:8001/health

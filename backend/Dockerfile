@@ -17,5 +17,5 @@ RUN chmod +x /app/entrypoint.sh
 
 EXPOSE 8000
 
-# Usamos la ruta absoluta para evitar errores de PATH
+# We use the absolute path to avoid PATH errors
 ENTRYPOINT ["/app/entrypoint.sh"]

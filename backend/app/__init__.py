@@ -1,4 +1,3 @@
-"""Paquet principal de l'aplicació Book Tracker API."""
+"""Book Tracker API main package"""
 
 __version__ = "0.1.0"
-

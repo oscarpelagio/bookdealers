@@ -1,10 +1,12 @@
-ALADI_HOST = "aladi.diba.cat"
-ALADI_PORT = 210
-ARGUS_HOST = "elmeuargus.biblioteques.gencat.cat"
-ARGUS_PORT = 210
-DATABASE   = "INNOPAC"
-
 SOURCES = {
+    # catàleg de la diputació de barcelona
     "aladi": {"host": "aladi.diba.cat", "port":210, "base":"INNOPAC"},
-    "argun": {"host": "elmeuargus.biblioteques.gencat.cat", "port":210, "base":"INNOPAC"}
+    # catàleg de girona, lleida i tarragona
+    "argus": {"host": "elmeuargus.biblioteques.gencat.cat", "port":210, "base":"INNOPAC"},
+    # catàleg de les illes balears
+    "cabib": {"host": "cabib.uib.es", "port":210, "base":"INNOPAC"}
 }
+
+HOST = SOURCES["aladi"]["host"]
+PORT = SOURCES["aladi"]["port"]
+BASE = SOURCES["aladi"]["base"]

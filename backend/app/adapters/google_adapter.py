@@ -1,50 +1,48 @@
-from datetime import date    
+"""Adapter for Google Books search results."""
+
+from datetime import date
 
 from app.schemas import BookBase
 from app.utils import NormalizationUtils
+from app.adapters.search_base_adapter import SearchBaseAdapter
 
 
-class GoogleBooksAdapter:
+class GoogleBooksAdapter(SearchBaseAdapter):
 
-    def build_search(self, title: str, author: str) -> str:
+    def build_search(
+        self, title: str | None, author: str | None, max_results: int = 10
+    ) -> dict:
         query_parts = []
         if title:
-            t_clean = " ".join(title.split())  # normaliza espacios
+            t_clean = " ".join(title.split())  # normalize whitespace
             query_parts.append(f"intitle:{t_clean}")
         if author:
-            a_clean = " ".join(author.split())  # normaliza espacios
+            a_clean = " ".join(author.split())  # normalize whitespace
             query_parts.append(f"inauthor:{a_clean}")
-        return " ".join(query_parts)
+        query = " ".join(query_parts)
+        return {
+            "query": query,
+            "max_results": max_results,
+            "order": "relevance",
+        }
 
-
-    # def build_search(self, title: str, author: str) -> str:
-    #     query_parts = []
-    #     if title:
-    #         t_clean = title.strip().replace(" ", "+")
-    #         query_parts.append(f"intitle:{t_clean}")
-    #     if author:
-    #         a_clean = author.strip().replace(" ", "+")
-    #         query_parts.append(f"inauthor:{a_clean}")
-    #     search = "+".join(query_parts)
-    #     return search
-
-    def parse_books(self, results: dict) -> list[BookBase]:
+    def response_adapter(self, results: dict) -> list[BookBase]:
         items = results.get("items", [])
         books = [self._parse_book(item) for item in items]        
         return books
     
     def _parse_book(self, item: dict) -> BookBase:
         """
-        Converteix el JSON de Google en el model net amb validació.
+        Convert Google JSON into the clean, validated model.
         """
         google_id = item.get("id", {})
         volume = item.get("volumeInfo", {})
 
-        title=volume.get("title", "Desconegut")
-        authors = NormalizationUtils.normalize_list(volume.get("authors", ["Desconegut"]))
+        title = volume.get("title", "Unknown")
+        authors = NormalizationUtils.normalize_list(volume.get("authors", ["Unknown"]))
 
         thumbnail = None
-        small_thumbnail=self._safe_get_nested(volume, ["imageLinks", "smallThumbnail"])
+        small_thumbnail = self._safe_get_nested(volume, ["imageLinks", "smallThumbnail"])
         if small_thumbnail:
             thumbnail = NormalizationUtils.thumbnail_resize(google_id)
 
@@ -68,7 +66,7 @@ class GoogleBooksAdapter:
         )
 
     def _extract_isbn(self, identifiers: list[dict]) -> str:
-        """Extreu l'ISBN amb prioritat a ISBN_13."""
+        """Extract ISBN, preferring ISBN_13."""
         isbn_13 = None
         isbn_10 = None
         
@@ -78,10 +76,10 @@ class GoogleBooksAdapter:
             elif identifier.get("type") == "ISBN_10":
                 isbn_10 = identifier.get("identifier")
         
-        return isbn_13 or isbn_10 or "Sense ISBN"
+        return isbn_13 or isbn_10 or "No ISBN"
 
     def _parse_date(self, date_str: str | None) -> date | None:
-        """Parseja dates en diferents formats (YYYY, YYYY-MM, YYYY-MM-DD)."""
+        """Parse dates in different formats (YYYY, YYYY-MM, YYYY-MM-DD)."""
         if not date_str:
             return None
             
@@ -97,12 +95,12 @@ class GoogleBooksAdapter:
             return None
 
     def _safe_get_string(self, data: dict, key: str, default: str = "") -> str:
-        """Obté un valor string de forma segura."""
+        """Safely get a string value."""
         value = data.get(key)
         return str(value) if value is not None else default
 
     def _safe_get_nested(self, data: dict, keys: list[str]) -> str | None:
-        """Obté un valor de diccionaris niats de forma segura."""
+        """Safely get a value from nested dictionaries."""
         current = data
         for key in keys:
             if not isinstance(current, dict):

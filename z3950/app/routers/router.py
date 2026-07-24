@@ -1,4 +1,4 @@
-"""Rutes principals de l'API."""
+"""Main API routes."""
 
 from fastapi import APIRouter
 from .endpoints import router

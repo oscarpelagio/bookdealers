@@ -1,31 +1,31 @@
 # Z39.50 Proxy — BookTracker
 
-Microservicio FastAPI que actúa como proxy al protocolo Z39.50 para consultar disponibilidad de libros en catálogos bibliotecarios catalanes (ALADI, Argus) usando `yaz-client`.
+FastAPI microservice that acts as a proxy to the Z39.50 protocol to check book availability in Catalan library catalogs (ALADI, Argus) using `yaz-client`.
 
-## Qué es Z39.50
+## What is Z39.50
 
-Z39.50 es un protocolo estándar (ISO 23950) para búsqueda y recuperación de información en bases de datos bibliográficas. Las bibliotecas catalanas (Diputació de Barcelona, Generalitat) exponen sus catálogos via este protocolo.
+Z39.50 is a standard protocol (ISO 23950) for search and retrieval in bibliographic databases. Catalan libraries (Barcelona Provincial Council, Generalitat) expose their catalogs via this protocol.
 
-Este servicio encapsula la complejidad de Z39.50 en un endpoint HTTP simple que el backend puede consumir.
+This service encapsulates Z39.50 complexity behind a simple HTTP endpoint that the backend can consume.
 
-## Arquitectura
+## Architecture
 
 ```
 app/
 ├── main.py               # FastAPI app + health check
-├── config.py             # Hosts y puertos de catálogos Z39.50
+├── config.py             # Z39.50 catalog hosts and ports
 ├── clients/
-│   └── client.py         # Wrapper async sobre yaz-client (subprocess)
+│   └── client.py         # Async wrapper around yaz-client (subprocess)
 ├── services/
-│   └── service.py        # Capa de servicio (delega al client)
+│   └── service.py        # Service layer (delegates to the client)
 └── routers/
-    ├── router.py          # Router principal (prefix /Z3950-search)
+    ├── router.py          # Main router (prefix /Z3950-search)
     ├── dependencies.py    # DI: Client → Service
     └── endpoints/
         └── router.py      # GET /search
 ```
 
-## Flujo de una consulta
+## Query flow
 
 ```
 Backend                    Z3950 Service              yaz-client            ALADI
@@ -49,49 +49,49 @@ Backend                    Z3950 Service              yaz-client            ALAD
   │  ◄── {"response": "..."} ──┤                          │                   │
 ```
 
-## Protocolo Z39.50 — Commands
+## Z39.50 protocol — commands
 
-El client envía estos comandos a `yaz-client` via stdin:
+The client sends these commands to `yaz-client` via stdin:
 
 ```
-base INNOPAC                          # Seleccionar base de datos
-find @and                             # Operador AND
-  @attr 1=4 @attr 3=3 @attr 4=6      # Búsqueda por título (attr 1=4)
-    "don quijote"                     #   con coincidencia exacta
-  @attr 1=1003 @attr 3=3 @attr 4=6   # AND por autor (attr 1=1003)
-    "cervantes"                       #   con coincidencia exacta
-format opac                           # Formato OPAC (incluye holdings)
-show 1+50                             # Mostrar registros 1 a 50
-exit                                  # Cerrar conexión
+base INNOPAC                          # Select database
+find @and                             # AND operator
+  @attr 1=4 @attr 3=3 @attr 4=6      # Title search (attr 1=4)
+    "don quixote"                     #   exact match
+  @attr 1=1003 @attr 3=3 @attr 4=6   # AND author (attr 1=1003)
+    "cervantes"                       #   exact match
+format opac                           # OPAC format (includes holdings)
+show 1+50                             # Show records 1 to 50
+exit                                  # Close connection
 ```
 
-Atributos Z39.50 usados:
-| Attr | Valor | Significado |
-|------|-------|-------------|
+Z39.50 attributes used:
+| Attr | Value | Meaning |
+|------|-------|---------|
 | 1 (Use) | 4 | Title |
 | 1 (Use) | 1003 | Author |
 | 3 (Structure) | 3 | Key |
 | 4 (Truncation) | 6 | Truncation: complete field |
 
-## Catálogos configurados
+## Configured catalogs
 
-Definidos en `config.py`:
+Defined in `config.py`:
 
-| Catálogo | Host | Puerto | Base | Cobertura |
-|----------|------|--------|------|-----------|
-| **ALADI** | `aladi.diba.cat` | 210 | INNOPAC | Biblioteques de la Diputació de Barcelona |
-| **Argus** | `elmeuargus.biblioteques.gencat.cat` | 210 | INNOPAC | Biblioteques de la Generalitat de Catalunya |
+| Catalog | Host | Port | Base | Coverage |
+|---------|------|------|------|----------|
+| **ALADI** | `aladi.diba.cat` | 210 | INNOPAC | Barcelona Provincial Council libraries |
+| **Argus** | `elmeuargus.biblioteques.gencat.cat` | 210 | INNOPAC | Generalitat of Catalonia libraries |
 
-Actualmente solo se usa ALADI. El config tiene ambos preparados para expansión futura.
+Currently only ALADI is used. The config includes both for future expansion.
 
 ## Endpoint
 
 ### `GET /search`
 
-| Param | Tipo | Descripción |
+| Param | Type | Description |
 |-------|------|-------------|
-| `title` | string | Título normalizado del libro |
-| `author` | string | Autor normalizado del libro |
+| `title` | string | Normalized book title |
+| `author` | string | Normalized book author |
 
 **Response:**
 ```json
@@ -100,53 +100,53 @@ Actualmente solo se usa ALADI. El config tiene ambos preparados para expansión 
 }
 ```
 
-El texto raw MARC es parseado por `Z3950Adapter` en el backend, no aquí. Este servicio solo actúa como proxy.
+The raw MARC text is parsed by `Z3950Adapter` in the backend, not here. This service only acts as a proxy.
 
-## Formato de respuesta MARC (OPAC)
+## MARC response format (OPAC)
 
-La respuesta contiene registros MARC separados por `Record type: USmarc`, cada uno con:
+The response contains MARC records separated by `Record type: USmarc`, each with:
 
 ```
 Record type: USmarc
 ...
-907  $f spa                              ← Idioma (campo 907 subcampo $f)
+907  $f spa                              ← Language (field 907 subfield $f)
 ...
-Data holdings                            ← Inicio de una copia
-  localLocation: BCN.Jaume Fuster        ← Biblioteca
-  publicNote: Available                  ← Estado (Available, DUE 20-03-26, In Transit...)
-Data holdings                            ← Siguiente copia
+Data holdings                            ← Start of a copy
+  localLocation: BCN.Jaume Fuster        ← Library
+  publicNote: Available                  ← Status (Available, DUE 20-03-26, In Transit...)
+Data holdings                            ← Next copy
   localLocation: TERRASSA.Central
   publicNote: DUE 15-04-26
 ```
 
-Un libro puede tener múltiples ediciones (registros MARC) y cada edición múltiples copias (holdings).
+A book can have multiple editions (MARC records), and each edition multiple copies (holdings).
 
-## Dependencias
+## Dependencies
 
-| Paquete | Uso |
+| Package | Use |
 |---------|-----|
-| `fastapi` | Framework web |
+| `fastapi` | Web framework |
 | `uvicorn` | ASGI server |
-| `yaz` | Cliente Z39.50 (apt package, no pip) |
+| `yaz` | Z39.50 client (apt package, no pip) |
 
 ## Docker
 
 ```dockerfile
 FROM python:3.11-slim
-RUN apt-get install -y yaz    # Instala yaz-client
+RUN apt-get install -y yaz    # Install yaz-client
 ```
 
-`yaz-client` es una herramienta C del proyecto YAZ. Se instala via `apt`, no pip. Por eso este servicio necesita su propio contenedor — aisla la dependencia del sistema.
+`yaz-client` is a C tool from the YAZ project. It is installed via `apt`, not pip. That is why this service needs its own container — it isolates the system dependency.
 
-## Desarrollo
+## Development
 
 ```bash
-# Levantar solo este servicio
+# Start only this service
 docker compose up z3950 -d --build
 
 # Health check
 curl http://localhost:8001/health
 
-# Test directo
-curl "http://localhost:8001/search?title=casa+espiritus&author=allende"
+# Direct test
+curl "http://localhost:8001/search?title=house+spirits&author=allende"
 ```

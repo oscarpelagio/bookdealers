@@ -1,8 +1,8 @@
-"""search cache
+"""init
 
-Revision ID: 59fa5d237846
-Revises: ce612ff99b17
-Create Date: 2026-02-12 18:25:08.745758
+Revision ID: f29700ca38c5
+Revises: 
+Create Date: 2026-03-22 16:02:19.975308
 
 """
 from typing import Sequence, Union
@@ -13,8 +13,8 @@ import sqlmodel
 
 
 # revision identifiers, used by Alembic.
-revision: str = '59fa5d237846'
-down_revision: Union[str, Sequence[str], None] = 'ce612ff99b17'
+revision: str = 'f29700ca38c5'
+down_revision: Union[str, Sequence[str], None] = None
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
