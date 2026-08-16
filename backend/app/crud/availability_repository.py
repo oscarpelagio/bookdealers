@@ -5,7 +5,11 @@ from sqlmodel.ext.asyncio.session import AsyncSession
 from datetime import timedelta, datetime
 from sqlalchemy import or_
 from app.schemas import AvailabilityBase
-from app.models import BookEstablishment, Establishment, Book, Catalog
+from app.models import BookEstablishment, Establishment, Book, Catalog, SeedAladi
+from app.core.seed_aladi import (
+    link_library_to_seed,
+    _street_seed,
+)
 
 
 class AvailabilityRepository:
@@ -15,16 +19,57 @@ class AvailabilityRepository:
     async def get_availability(self, book: Book, catalog: Catalog):
         """
         Retorna la disponibilitat guardada d'un llibre, o None si no en té.
+
+        Per a biblioteques del catàleg aladi, si la fila seed_aladi està
+        enllaçada (id_establishment), es mostren el nom, municipi i carrer
+        ben formats del volcat DIBA en lloc de les dades pròpies.
         """
         statement = (
-            select(BookEstablishment)
+            select(BookEstablishment, Establishment, SeedAladi)
             .join(Establishment, BookEstablishment.establishment_id == Establishment.id)
+            .outerjoin(SeedAladi, SeedAladi.id_establishment == Establishment.id)
             .where(BookEstablishment.updated_at > datetime.utcnow() - timedelta(hours=24))
             .where(BookEstablishment.book_id == book.id)
             .where(Establishment.catalog_id == catalog.id)
         )
         result = await self.db.exec(statement)
-        return result.all()
+        rows = result.all()
+        return [
+            self._build_entry(be, est, seed)
+            for be, est, seed in rows
+        ]
+
+    @staticmethod
+    def _build_entry(be, est, seed):
+        """Construeix una entrada de disponibilitat; si hi ha match aladi es
+        prioritzen els camps del volcat (nom, municipi, carrer)."""
+        if seed is not None:
+            establishment_name = seed.nom or est.name
+            establishment_city = seed.municipi or est.city
+            establishment_street = _street_seed(seed.adreca, seed.codi_postal, seed.municipi) or est.street
+            establishment_postal_code = seed.codi_postal or est.postal_code
+        else:
+            establishment_name = est.name
+            establishment_city = est.city
+            establishment_street = est.street
+            establishment_postal_code = est.postal_code
+
+        return {
+            "establishment_type": est.type,
+            "establishment_name": establishment_name,
+            "establishment_street": establishment_street,
+            "establishment_postal_code": establishment_postal_code,
+            "establishment_city": establishment_city,
+            "establishment_province": est.province,
+            "lat": seed.lat if seed is not None else None,
+            "lon": seed.lon if seed is not None else None,
+            "catalog_id": est.catalog_id,
+            "book_id": be.book_id,
+            "book_language": be.language,
+            "book_status": be.status.name if be.status is not None else None,
+            "queue": be.queue,
+            "link": be.link,
+        }
 
     async def get_outdated_availability(
         self,
@@ -74,6 +119,8 @@ class AvailabilityRepository:
                 self.db.add(establishment)
                 await self.db.commit()
                 await self.db.refresh(establishment)
+                # Biblioteca nova: enllaça amb la fila seed_aladi més semblant.
+                await link_library_to_seed(self.db, establishment)
             else:
                 updated = False
                 if item.establishment_street and not establishment.street:

@@ -15,12 +15,14 @@ services:
     build: ./backend
     volumes:
       - ./backend:/app
+      - ./assets:/app/assets:ro
     restart: always
     ports:
       - "8000:8000"
     depends_on:
       - db
       - z3950
+      - photo-scraper
     env_file:
       - ./.env
 
@@ -34,6 +36,7 @@ services:
     depends_on:
       - db
       - z3950
+      - photo-scraper
     env_file:
       - ./.env
 
@@ -45,6 +48,15 @@ services:
       - "8001:8001"    
     volumes:
       - ./z3950:/app
+
+  photo-scraper:
+    container_name: photo-scraper
+    build: ./photo-scraper
+    restart: always
+    ports:
+      - "8002:8002"
+    volumes:
+      - ./photo-scraper:/app
 
 volumes:
   postgres_data:

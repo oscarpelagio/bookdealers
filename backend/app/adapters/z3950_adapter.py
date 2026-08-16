@@ -13,8 +13,8 @@ class Z3950Adapter(AvailabilityBaseAdapter):
 
     def build_search(self, book: Book, catalog: Catalog) -> FetchRequest :
         params = {
-        "title": book.normal_title,
-        "author": book.normal_author.split()[-1],
+        "title": book.normal_original_title,
+        "author": book.normal_author,
         "url": catalog.url,
         "port": catalog.port,
         "base": catalog.base

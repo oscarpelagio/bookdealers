@@ -25,6 +25,15 @@ class NormalizationUtils():
         return title_without_article.strip()
 
     @staticmethod
+    def author_name_first(author: str) -> str:
+        """'García Márquez, Gabriel' -> 'Gabriel García Márquez'."""
+        if not author or "," not in author:
+            return author
+        surname, rest = author.split(",", 1)
+        first = rest.split(",", 1)[0].strip()
+        return f"{first} {surname}".strip()
+
+    @staticmethod
     def normalize_list(data: list[str] | str | None) -> str:
         """Normalize lists or strings into a comma-separated string."""
         if not data:

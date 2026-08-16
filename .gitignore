@@ -74,7 +74,12 @@ xcuserdata/
 derivedData/
 
 # ------------------------------------------------
-# 7. VARIOS
+# 7. EXPO
+# ------------------------------------------------
+.expo/
+
+# ------------------------------------------------
+# 8. VARIOS
 # ------------------------------------------------
 # Logs de errores
 *.log
@@ -82,3 +87,5 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .ruff_cache/
+# heroui-agents-md
+.heroui-docs/

@@ -67,6 +67,7 @@ class OpenLibraryAdapter(SearchBaseAdapter):
             thumbnail=thumbnail,
             normal_title=NormalizationUtils.normalize_text(title),
             normal_author=NormalizationUtils.normalize_text(authors),
+            normal_original_title=NormalizationUtils.normalize_text(title),
         )
 
     def _build_preview_link(self, key: str | None) -> str | None:

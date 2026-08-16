@@ -291,6 +291,51 @@ Environment variables (`.env`):
 | `GOOGLE_API_KEY` | Google Books API key | `None` |
 | `API_PORT` | Backend port | `8000` |
 
+## Authentication
+
+Módulo autocontenido en `app/auth/` con arquitectura por capas
+(modelo/repositorio/servicio/router/dependencias/excepciones). No depende de
+servicios externos de autenticación (AWS Cognito, Keycloak, etc.).
+
+### Flujos y endpoints (`/auth`)
+
+| Método | Ruta | Descripción |
+|--------|------|-------------|
+| POST | `/auth/register` | Registro por email/username/contraseña. No revela si el email existe. |
+| POST | `/auth/login` | Login por email (+rate limit y bloqueo por fuerza bruta). |
+| POST | `/auth/refresh` | Rota el refresh token (detección de replay/revolucion del token robado). |
+| POST | `/auth/logout` | Revoca un refresh token (o todas las sesiones con `logout_everywhere`). |
+| POST | `/auth/google` | Login/registro con ID token de Google (validado por JWKS). |
+| GET  | `/auth/me` | Usuario actual (protector). |
+| POST | `/auth/verify-email` | Verifica correo con token de un solo uso. |
+| POST | `/auth/reset-password/request` + `/confirm` | Recuperación de contraseña. |
+| POST | `/auth/change-password` | Cambio de contraseña (revoca sesiones). |
+
+### Seguridad
+
+- **Contraseñas**: Argon2id via `pwdlib` (reemplazo mantenido de passlib). Nunca en claro.
+- **Access JWT**: 15 min, firmado `HS256` con `iss`/`aud`/`jti` y claims de roles.
+- **Refresh token**: opaco (48 bytes), **30 días**, guardado hasheado con `HMAC-SHA256` + pepper. Rotación encadenada en BD. Si un token ya usado se reutiliza, se revoca **toda la familia** (replay protection).
+- **No enumeración**: errores genéricos de login/registro; los timings se igualan con un hash dummy.
+- **Fuerza bruta**: lockout por cuenta (intentos en BD) + rate limiter en memoria por IP+email (configurables).
+- **Google**: se valida la firma del ID token contra la JWKS pública (iss/aud/exp). Los tokens de Google nunca autorizan peticiones internas; se emiten JWT propios.
+- **Roles**: RBAC normalizado (`roles` + `user_roles`). `require_roles(RoleKey.ADMIN)` como dependency.
+- **Email**: tablas, tokens y servicios listos para verificación/reset. El envío es un *stub* (`_send_email`). Con `EMAIL_SEND_ENABLED=false` se devuelven los tokens en la respuesta (modo dev).
+
+### Tablas (migración `a1b2c3d4e5f6`)
+
+`roles`, `user_roles`, `users` (UUID, soft delete, bloqueo), `refresh_tokens` (hash, familia, rotación), `email_verification_tokens`, `password_reset_tokens`. Todas las fechas timezone-aware.
+
+### Tests
+
+Ejecuta contra un PostgreSQL (docker) usando una base dedicada `TEST_DATABASE_NAME`:
+
+```bash
+make test   # docker compose exec back pytest -q
+```
+
+Cubre registro, login, refresh (rotación + replay), logout, google login y permisos RBAC.
+
 ## Dependencies
 
 | Package | Use |
@@ -304,3 +349,6 @@ Environment variables (`.env`):
 | `pydantic-settings` | Settings from .env |
 | `alembic` | DB migrations |
 | `python-multipart` | File upload (CSV) |
+| `pwdlib[argon2]` | Argon2id password hashing |
+| `PyJWT` + `cryptography` | JWT access tokens + RS256 (Google) |
+| `email-validator` | Validación `EmailStr` |

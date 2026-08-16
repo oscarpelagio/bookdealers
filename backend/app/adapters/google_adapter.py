@@ -62,7 +62,8 @@ class GoogleBooksAdapter(SearchBaseAdapter):
             small_thumbnail=small_thumbnail,
             thumbnail=thumbnail,
             normal_title=NormalizationUtils.normalize_text(title),
-            normal_author=NormalizationUtils.normalize_text(authors)
+            normal_author=NormalizationUtils.normalize_text(authors),
+            normal_original_title=NormalizationUtils.normalize_text(title),
         )
 
     def _extract_isbn(self, identifiers: list[dict]) -> str:

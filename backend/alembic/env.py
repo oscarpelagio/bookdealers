@@ -9,7 +9,7 @@ from alembic import context
 
 # Importa els models perquè Alembic els detecti
 from app.core.config import settings
-from app.models import Book
+from app import models  # noqa: F401
 
 # Aquest és l'objecte Config d'Alembic
 config = context.config

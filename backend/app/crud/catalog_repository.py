@@ -13,3 +13,8 @@ class CatalogRepository:
         Catalog.name == catalog)
         result = await self.db.exec(statement)
         return result.first()
+
+    async def get_catalog_by_service(self, service: str) -> Catalog | None:
+        statement = select(Catalog).where(Catalog.service == service)
+        result = await self.db.exec(statement)
+        return result.first()

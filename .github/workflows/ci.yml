@@ -1,0 +1,73 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  backend:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: bookdealers
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: bookdealers
+      # Secrets de desarrollo para CI (>= 32 bytes). No usar en producción.
+      JWT_SECRET: ci_only_jwt_secret_do_not_use_in_prod_0000000000000000
+      TOKEN_HASH_SECRET: ci_only_token_hash_secret_do_not_use_in_prod_0000000
+      Z3950_SERVICE_URL: http://localhost:8001/search
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: |
+            backend/requirements.txt
+            backend/requirements-dev.txt
+
+      - name: Install dependencies
+        run: pip install -r requirements-dev.txt
+
+      - name: alembic upgrade head
+        run: alembic upgrade head
+
+      - name: alembic check (no schema drift)
+        run: alembic check
+
+      - name: pytest
+        run: pytest -q
+
+      - name: alembic downgrade base
+        run: alembic downgrade base
+
+      - name: alembic upgrade head
+        run: alembic upgrade head

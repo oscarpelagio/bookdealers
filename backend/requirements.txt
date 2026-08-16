@@ -9,4 +9,14 @@ alembic
 python-multipart
 asyncpg
 beautifulsoup4
+curl_cffi
 apscheduler
+thefuzz
+python-Levenshtein
+Pillow
+
+# Auth
+pwdlib[argon2]
+PyJWT
+cryptography
+email-validator

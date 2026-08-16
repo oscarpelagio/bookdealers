@@ -50,7 +50,9 @@ class AvailabilityBaseService(ABC):
             availability = self.adapter.response_adapter(book, catalog, respuesta)
             if availability:
                 await self.availability_repository.save_availability(availability)
-                return availability
+                # Retorna les dades enriquides (nom/municipi/carrer i lat/lon
+                # del volcat DIBA via seed_aladi), no la resposta crua.
+                return await self.availability_repository.get_availability(book, catalog)
         except Exception as e:
             logger.exception("Error en la llamada externa: %s", e)
             return []

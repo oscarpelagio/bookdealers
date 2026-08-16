@@ -1,3 +1,4 @@
+from app.schemas import FetchRequest
 from .availability_base_client import AvailabilityBaseClient
 import httpx
 
@@ -13,3 +14,8 @@ class Z3950Client(AvailabilityBaseClient):
                 "Accept": "application/json, text/javascript, */*; q=0.01"
             }
         )
+
+    async def fetch_books(self, request: FetchRequest) -> str:
+        response = await self.client.get(request.url, params=request.params)
+        response.raise_for_status()
+        return response.text

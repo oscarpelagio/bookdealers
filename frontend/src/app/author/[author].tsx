@@ -1,8 +1,10 @@
 import { useQuery } from '@tanstack/react-query';
+import { useEffect } from 'react';
 import { Image } from 'expo-image';
 import { LinearGradient } from 'expo-linear-gradient';
-import { router, useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams, useNavigation } from 'expo-router';
 import { Linking, Pressable, ScrollView, StyleSheet, View } from 'react-native';
+import { SymbolView } from 'expo-symbols';
 
 import { apiClient } from '@/api/client';
 import { searchBooksByAuthor, getAuthorAppearsIn } from '@/api/books';
@@ -42,6 +44,7 @@ export default function AuthorScreen() {
   const author = params.author ?? '';
   const authorBiblioteca = params.authorBiblioteca ?? author;
   const theme = useTheme();
+  const navigation = useNavigation();
 
   const { data: books } = useQuery({
     queryKey: ['book-author', authorBiblioteca],
@@ -70,6 +73,22 @@ export default function AuthorScreen() {
   const appearsInLists = (appearsIn?.lists ?? []).filter(
     (l) => l.titulo != null && l.titulo.length > 0,
   );
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerActions}>
+          <Pressable hitSlop={8} onPress={() => {}}>
+            <View style={styles.dots}>
+              <View style={[styles.dot, { backgroundColor: '#000000' }]} />
+              <View style={[styles.dot, { backgroundColor: '#000000' }]} />
+              <View style={[styles.dot, { backgroundColor: '#000000' }]} />
+            </View>
+          </Pressable>
+        </View>
+      ),
+    });
+  }, [navigation]);
 
   const profileFound = profile?.found;
   const photoSourceValue = profileFound ? thumbUrl(profile.image_url) : photo?.photo_url ?? null;
@@ -323,6 +342,22 @@ const styles = StyleSheet.create({
     right: Spacing.four,
     bottom: Spacing.three,
     gap: Spacing.one,
+  },
+  headerActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: Spacing.three,
+    paddingVertical: 6,
+  },
+  dots: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 3,
+  },
+  dot: {
+    width: 4,
+    height: 4,
+    borderRadius: 2,
   },
   verifiedChip: {
     alignSelf: 'flex-start',

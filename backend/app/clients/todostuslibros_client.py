@@ -1,6 +1,7 @@
 import httpx
 import re
 import urllib.parse
+from decimal import Decimal, InvalidOperation
 from bs4 import BeautifulSoup
 
 from .availability_base_client import AvailabilityBaseClient
@@ -18,6 +19,7 @@ class TodostuslibrosClient(AvailabilityBaseClient):
         )
         self.xsrf_token: str | None = None
         self.last_referer: str | None = None
+        self.last_price: Decimal | None = None
 
     async def fetch_availability(self, request: FetchRequest):
         headers = {"X-Requested-With": "XMLHttpRequest"}
@@ -46,6 +48,8 @@ class TodostuslibrosClient(AvailabilityBaseClient):
         fallback_isbn = str(request.params.get("isbn") or "").strip()
         if not isbn:
             isbn = fallback_isbn
+
+        self.last_price = self._extract_price_from_search(search_response.text, isbn)
 
         catalog_url = str(request.params.get("catalog_url") or "").strip()
         if not isbn or not catalog_url:
@@ -84,3 +88,32 @@ class TodostuslibrosClient(AvailabilityBaseClient):
                 return original
 
         return cleaned[0][0] if cleaned else ""
+
+    def _extract_price_from_search(self, html: str, isbn: str) -> Decimal | None:
+        """Extrae el precio del libro desde el HTML de búsqueda.
+
+        El precio aparece en el atributo `data-gtm-precio` del `<li>` que
+        corresponde al libro (identificado por `id="book_{isbn}"`).
+        """
+        if not isbn:
+            return None
+        soup = BeautifulSoup(html, "html.parser")
+        normalized_isbn = re.sub(r"[^0-9Xx]", "", isbn)
+        candidates = soup.select("li[data-gtm-precio]")
+        for node in candidates:
+            node_isbn = re.sub(r"[^0-9Xx]", "", node.get("data-gtm-isbn") or "")
+            node_id = re.sub(r"[^0-9Xx]", "", node.get("id") or "")
+            if node_isbn and node_isbn == normalized_isbn:
+                return self._to_decimal(node.get("data-gtm-precio"))
+            if node_id and node_id == normalized_isbn:
+                return self._to_decimal(node.get("data-gtm-precio"))
+        return None
+
+    def _to_decimal(self, raw: str | None) -> Decimal | None:
+        if not raw:
+            return None
+        cleaned = raw.strip().replace(",", ".").replace("€", "").strip()
+        try:
+            return Decimal(cleaned)
+        except InvalidOperation:
+            return None
