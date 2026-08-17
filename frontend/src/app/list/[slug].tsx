@@ -4,7 +4,7 @@ import { useLocalSearchParams, useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Linking, Platform, Pressable, ScrollView, StyleSheet, View } from 'react-native';
 
-import { getCentralList, getCentralListBooks } from '@/api/books';
+import { getSourceList, getSourceListBooks } from '@/api/books';
 import { BookCard } from '@/components/book-card';
 import { ClampedText } from '@/components/clamped-text';
 import { ThemedText } from '@/components/themed-text';
@@ -14,21 +14,21 @@ import { useCoverColor } from '@/hooks/use-cover-color';
 import { useTheme } from '@/hooks/use-theme';
 import { darkenColor, isDarkColor, lightenColor } from '@/utils/format';
 
-export default function CentralListScreen() {
+export default function SourceListScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const theme = useTheme();
   const navigation = useNavigation();
   const [coverRatio, setCoverRatio] = useState<number | null>(null);
 
   const { data: list, isLoading: listLoading } = useQuery({
-    queryKey: ['central-list', slug],
-    queryFn: () => getCentralList(slug),
+    queryKey: ['source-list', slug],
+    queryFn: () => getSourceList(slug),
     enabled: Boolean(slug),
   });
 
   const { data: books, isLoading: booksLoading } = useQuery({
-    queryKey: ['central-list-books', slug],
-    queryFn: () => getCentralListBooks(slug),
+    queryKey: ['source-list-books', slug],
+    queryFn: () => getSourceListBooks(slug),
     enabled: Boolean(slug),
     retry: 1,
   });

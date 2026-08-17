@@ -1,5 +1,5 @@
 import { apiClient } from '@/api/client';
-import type { AvailabilityEntry, AvailabilitySource, Book, SearchParams, SearchSource, BookAppearsInResponse, CentralList } from '@/api/types';
+import type { AvailabilityEntry, AvailabilitySource, Book, SearchParams, SearchSource, BookAppearsInResponse, SourceList } from '@/api/types';
 
 export function searchBooks(
   source: SearchSource,
@@ -46,10 +46,10 @@ export function getAuthorAppearsIn(author: string) {
   return apiClient.get<BookAppearsInResponse>('/author-profile/appears-in', { author });
 }
 
-export function getCentralList(slug: string) {
-  return apiClient.get<CentralList>(`/blog-articles/${slug}`);
+export function getSourceList(slug: string) {
+  return apiClient.get<SourceList>(`/source-lists/${slug}`);
 }
 
-export function getCentralListBooks(slug: string) {
-  return apiClient.get<Book[]>(`/blog-articles/${slug}/books`);
+export function getSourceListBooks(slug: string) {
+  return apiClient.get<Book[]>(`/source-lists/${slug}/books`);
 }

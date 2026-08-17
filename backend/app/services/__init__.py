@@ -16,3 +16,4 @@ from .asteroide_lazy_service import AsteroideLazyService
 from .penguin_lazy_service import PenguinLazyService
 from .author_profile_lookup import AuthorProfileLookupService
 from .central_list_books_service import CentralListBooksService
+from .source_list_books_service import SourceListBooksService

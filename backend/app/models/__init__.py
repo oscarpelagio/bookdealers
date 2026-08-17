@@ -13,6 +13,8 @@ from .penguin_author_index import PenguinAuthorIndex
 from .asteroide_author_index import AsteroideAuthorIndex
 from .central_blog_article import CentralBlogArticle
 from .central_blog_article_book import CentralBlogArticleBook
+from .source_list import SourceList
+from .source_list_book import SourceListBook
 
 # Models del mòdul d'autenticació (re-exportats perquè create_all/Alembic
 # els detectin a través de SQLModel.metadata).

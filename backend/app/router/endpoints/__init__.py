@@ -8,3 +8,4 @@ from .author_photo_router import router as author_photo_router
 from .author_profile_router import router as author_profile_router
 from .thumb_router import router as thumb_router
 from .central_blog_router import router as central_blog_router
+from .source_list_router import router as source_list_router

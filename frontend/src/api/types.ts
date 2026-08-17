@@ -67,10 +67,10 @@ export type SearchSource = 'google' | 'openlibrary' | 'z3950';
 
 export type AvailabilitySource = 'z3950' | 'ebiblio' | 'todostuslibros';
 
-// ---------- Blog La Central (Aparece en) ----------
+// ---------- Listas genéricas de fuentes web (source-lists) ----------
 
 export interface BookAppearsInList {
-  article_id: number;
+  list_id: number;
   slug: string;
   url: string;
   titulo: string;
@@ -86,8 +86,8 @@ export interface BookAppearsInResponse {
   lists: BookAppearsInList[];
 }
 
-export interface CentralList {
-  article_id: number;
+export interface SourceList {
+  list_id: number;
   slug: string;
   url: string;
   tipo: string | null;

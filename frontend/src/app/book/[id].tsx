@@ -227,7 +227,7 @@ export default function BookDetailScreen() {
               contentContainerStyle={styles.appearsList}>
               {appearsInLists.map((l) => (
                 <Pressable
-                  key={l.article_id}
+                  key={l.list_id}
                   style={styles.appearsCard}
                   onPress={() => {
                     router.push({

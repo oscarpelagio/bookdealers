@@ -2,8 +2,8 @@
 
 from fastapi import APIRouter, Depends, HTTPException, status
 
-from app.crud import BookRepository, CentralArticleRepository
-from app.router import get_book_repository, get_central_article_repository
+from app.crud import BookRepository, SourceListRepository
+from app.router import get_book_repository, get_source_list_repository
 from app.schemas import BookResponse, BookAppearsInResponse, BookAppearsInList
 
 router = APIRouter()
@@ -25,29 +25,29 @@ async def get_book(
 async def book_appears_in(
     book_id: int,
     book_repo: BookRepository = Depends(get_book_repository),
-    central_repo: CentralArticleRepository = Depends(get_central_article_repository),
+    list_repo: SourceListRepository = Depends(get_source_list_repository),
 ) -> BookAppearsInResponse:
-    """Listas del blog de La Central donde aparece un libro.
+    """Llistes genèriques (La Central, etc.) on apareix un llibre.
 
-    Compara por título + autor normalizados (mismo criterio de
+    Compara per título + autor normalitzados (mismo criterio de
     `NormalizationUtils.normalize_text` usado al volcar los artículos).
     """
     book = await book_repo.get_by_id(book_id)
     if book is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Book not found")
 
-    rows = await central_repo.book_appears_in(book.normal_title, book.normal_author)
+    rows = await list_repo.book_appears_in(book.normal_title, book.normal_author)
     lists = [
         BookAppearsInList(
-            article_id=article.id,
-            slug=article.slug,
-            url=article.url,
-            titulo=article.titulo,
-            autor=article.autor,
-            fecha=article.fecha,
-            portada_url=article.portada_url,
+            list_id=slist.id,
+            slug=slist.slug,
+            url=slist.url,
+            titulo=slist.titulo,
+            autor=slist.autor,
+            fecha=slist.fecha,
+            portada_url=slist.portada_url,
             posicion=posicion,
         )
-        for article, posicion in rows
+        for slist, posicion in rows
     ]
     return BookAppearsInResponse(book_id=book_id, total=len(lists), lists=lists)

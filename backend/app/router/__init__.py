@@ -20,5 +20,6 @@ from .dependencies import (
 	get_author_source_related_repository,
 	get_author_profile_lookup_service,
 	get_central_article_repository,
+	get_source_list_repository,
 )
 from .router import api_router

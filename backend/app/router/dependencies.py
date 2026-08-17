@@ -31,7 +31,7 @@ from app.clients import (
     AsteroideClient,
 )
 from app.core.deps import get_db
-from app.crud import BookRepository, SearchRepository, AvailabilityRepository, CatalogRepository, AuthorPhotoRepository, AuthorSourceRepository, AuthorSourceRelatedRepository, PenguinIndexRepository, AsteroideIndexRepository, CentralArticleRepository
+from app.crud import BookRepository, SearchRepository, AvailabilityRepository, CatalogRepository, AuthorPhotoRepository, AuthorSourceRepository, AuthorSourceRelatedRepository, PenguinIndexRepository, AsteroideIndexRepository, CentralArticleRepository, SourceListRepository
 from app.services import (
     GoogleBooksService,
     OpenLibraryService,
@@ -97,6 +97,11 @@ def get_central_article_repository(
     db: AsyncSession = Depends(get_db),
 ) -> CentralArticleRepository:
     return CentralArticleRepository(db)
+
+def get_source_list_repository(
+    db: AsyncSession = Depends(get_db),
+) -> SourceListRepository:
+    return SourceListRepository(db)
 
 # ------- CLIENTS --------
 @lru_cache()

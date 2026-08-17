@@ -184,7 +184,7 @@ export default function AuthorScreen() {
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.appearsShelf}>
               {appearsInLists.map((l) => (
-                <AppearsInCard key={l.article_id} item={l} />
+                <AppearsInCard key={l.list_id} item={l} />
               ))}
             </ScrollView>
           </View>

@@ -9,6 +9,7 @@ from app.auth.service import seed_default_roles
 from app.core.author_seed import seed_author_data
 from app.core.catalog_seed import seed_catalogs
 from app.core.seed_aladi import seed_aladi
+from app.core.source_list_seed import seed_source_list_data
 from app.core.exceptions import DomainError
 from app.router import api_router
 
@@ -20,6 +21,7 @@ async def lifespan(app: FastAPI):
     await seed_catalogs()
     await seed_aladi()
     await seed_author_data()
+    await seed_source_list_data()
     await seed_default_roles()
     yield
 

@@ -10,3 +10,4 @@ from .author_source_related_repository import AuthorSourceRelatedRepository
 from .penguin_index_repository import PenguinIndexRepository
 from .asteroide_index_repository import AsteroideIndexRepository
 from .central_article_repository import CentralArticleRepository
+from .source_list_repository import SourceListRepository
