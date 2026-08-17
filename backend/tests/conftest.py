@@ -12,6 +12,7 @@ import httpx
 import psycopg2
 import psycopg2.extensions
 import pytest
+import pytest_asyncio
 from sqlalchemy import text
 from sqlalchemy.pool import NullPool
 from sqlmodel import SQLModel
@@ -59,6 +60,10 @@ async def _init_schema(engine) -> None:
     async with engine.begin() as conn:
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS unaccent"))
         await conn.execute(text("CREATE EXTENSION IF NOT EXISTS pg_trgm"))
+        # Recrea el esquema cada sesión: create_all no altera taules ja
+        # existents i una BD de test persistent quedaria desactualitzada
+        # enfront dels models nous.
+        await conn.run_sync(SQLModel.metadata.drop_all)
         await conn.run_sync(SQLModel.metadata.create_all)
     factory = async_sessionmaker(engine, class_=AsyncSession, expire_on_commit=False)
     async with factory() as session:
@@ -69,15 +74,15 @@ async def _init_schema(engine) -> None:
         await session.commit()
 
 
-@pytest.fixture(scope="session")
-def test_engine():
+@pytest_asyncio.fixture(scope="session", loop_scope="session")
+async def test_engine():
     _create_test_database()
     # NullPool: cada sessió obté una connexió nova al loop actual, evitant
     # el problema "attached to a different loop" amb pytest-asyncio.
     engine = create_async_engine(TEST_DATABASE_URL, echo=False, poolclass=NullPool)
-    asyncio.run(_init_schema(engine))
+    await _init_schema(engine)
     yield engine
-    asyncio.run(engine.dispose())
+    await engine.dispose()
 
 
 @pytest.fixture(scope="session")

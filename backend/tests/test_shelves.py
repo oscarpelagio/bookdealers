@@ -55,9 +55,9 @@ async def test_default_status_shelves_seeded(client):
     resp = await client.get("/shelves", headers=_h(token))
     assert resp.status_code == 200
     slugs = [s["slug"] for s in resp.json()]
-    assert {"to-read", "currently-reading", "read"} <= set(slugs)
+    assert {"to-read", "currently-reading", "read", "abandoned"} <= set(slugs)
     statuses = [s for s in resp.json() if s["kind"] == "STATUS"]
-    assert len(statuses) == 3
+    assert len(statuses) == 4
 
 
 async def test_create_custom_shelf(client):

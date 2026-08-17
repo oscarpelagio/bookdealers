@@ -2,6 +2,7 @@
 
 from datetime import datetime
 
+from sqlalchemy import Column, Text
 from sqlmodel import Field, SQLModel
 
 
@@ -19,7 +20,11 @@ class CentralBlogArticle(SQLModel, table=True):
     intro: str | None = Field(default=None, description="Blockquote introductori citat («...»)")
     autor: str | None = Field(default=None, description="Author sense el prefix 'Per '")
     fecha: str | None = Field(default=None, description="Data com apareix, ex. '26.7.2026'")
-    cuerpo: str | None = Field(default=None, description="Cos de l'article en text pla")
+    cuerpo: str | None = Field(
+        default=None,
+        sa_column=Column(Text, nullable=True),
+        description="Cos de l'article en text pla",
+    )
     portada_url: str | None = Field(default=None, description="URL de la imatge de portada")
     status: str = Field(default="pending", description="pending | done")
     fetched_at: datetime | None = Field(default=None)

@@ -1,4 +1,7 @@
 -r requirements.txt
 
-pytest
-pytest-asyncio
+# Versiones clavadas: el patrón de fixtures async del conftest requiere
+# pytest-asyncio 1.x (loop_scope). No actualizar de forma suelta o la suite
+# se cuelga/deadlockea (conexiones asyncpg en loops cruzados).
+pytest==9.1.1
+pytest-asyncio==1.4.0
