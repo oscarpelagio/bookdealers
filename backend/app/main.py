@@ -6,6 +6,7 @@ from fastapi.responses import JSONResponse
 
 from app.auth.exceptions import AuthError
 from app.auth.service import seed_default_roles
+from app.core.author_seed import seed_author_data
 from app.core.catalog_seed import seed_catalogs
 from app.core.seed_aladi import seed_aladi
 from app.core.exceptions import DomainError
@@ -18,6 +19,7 @@ async def lifespan(app: FastAPI):
     # Se evita `create_all` para no chocar con las migraciones en dev (--reload).
     await seed_catalogs()
     await seed_aladi()
+    await seed_author_data()
     await seed_default_roles()
     yield
 

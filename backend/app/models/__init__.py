@@ -7,9 +7,8 @@ from .establishments import Establishment
 from .catalogs import Catalog
 from .seed_aladi import SeedAladi
 from .author_photo import AuthorPhoto
-from .author_anagrama import AuthorAnagrama
-from .author_blackie import AuthorBlackie
 from .author_source import AuthorSource
+from .author_source_related import AuthorSourceRelated
 from .penguin_author_index import PenguinAuthorIndex
 from .asteroide_author_index import AsteroideAuthorIndex
 from .central_blog_article import CentralBlogArticle

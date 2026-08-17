@@ -16,7 +16,7 @@ from thefuzz import fuzz
 from app.adapters.penguin_adapter import parse_profile
 from app.clients import PenguinClient
 from app.clients.anagrama_client import RateLimitedError
-from app.crud import AuthorSourceRepository, PenguinIndexRepository
+from app.crud import AuthorSourceRelatedRepository, AuthorSourceRepository, PenguinIndexRepository
 from app.models import AuthorSource, PenguinAuthorIndex
 from app.utils import NormalizationUtils
 
@@ -33,10 +33,12 @@ class PenguinLazyService:
         repo: AuthorSourceRepository,
         index_repo: PenguinIndexRepository,
         client: PenguinClient,
+        related_repo: AuthorSourceRelatedRepository,
     ) -> None:
         self.repo = repo
         self.index_repo = index_repo
         self.client = client
+        self.related_repo = related_repo
 
     async def resolve(self, author: str) -> AuthorSource | None:
         author = (author or "").strip()
@@ -121,15 +123,16 @@ class PenguinLazyService:
             return None
         slug = entry.slug or (await self._slug_of(profile.name, entry.author_id))
         try:
-            return await self.repo.upsert(
+            row = await self.repo.upsert(
                 author_key=author_key,
                 editorial=EDITORIAL,
                 name=name,
                 slug=slug,
                 description=profile.description,
                 image_url=profile.image_url,
-                extra=profile.extra or None,
             )
+            await self.related_repo.replace(author_key, EDITORIAL, profile.extra or None)
+            return row
         except Exception:
             logger.exception("Fallo persistindo perfil Penguin '%s'", author_key)
             return None

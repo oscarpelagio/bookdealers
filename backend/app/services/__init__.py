@@ -11,7 +11,6 @@ from .ebiblio_service import EBiblioService
 from .todostuslibros_service import TodostuslibrosService
 from .author_photo_service import AuthorPhotoService
 from .anagrama_scraper_service import AnagramaScraperService
-from .anagrama_lookup_service import AnagramaLookupService
 from .blackie_scraper_service import BlackieScraperService
 from .asteroide_lazy_service import AsteroideLazyService
 from .penguin_lazy_service import PenguinLazyService

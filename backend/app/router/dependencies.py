@@ -31,7 +31,7 @@ from app.clients import (
     AsteroideClient,
 )
 from app.core.deps import get_db
-from app.crud import BookRepository, SearchRepository, AvailabilityRepository, CatalogRepository, AuthorPhotoRepository, AnagramaRepository, AuthorSourceRepository, PenguinIndexRepository, AsteroideIndexRepository, CentralArticleRepository
+from app.crud import BookRepository, SearchRepository, AvailabilityRepository, CatalogRepository, AuthorPhotoRepository, AuthorSourceRepository, AuthorSourceRelatedRepository, PenguinIndexRepository, AsteroideIndexRepository, CentralArticleRepository
 from app.services import (
     GoogleBooksService,
     OpenLibraryService,
@@ -40,7 +40,6 @@ from app.services import (
     EBiblioService,
     TodostuslibrosService,
     AuthorPhotoService,
-    AnagramaLookupService,
     PenguinLazyService,
     AsteroideLazyService,
     AuthorProfileLookupService,
@@ -74,15 +73,15 @@ def get_author_photo_repository(
 ) -> AuthorPhotoRepository:
     return AuthorPhotoRepository(db)
 
-def get_anagrama_repository(
-    db: AsyncSession = Depends(get_db),
-) -> AnagramaRepository:
-    return AnagramaRepository(db)
-
 def get_author_source_repository(
     db: AsyncSession = Depends(get_db),
 ) -> AuthorSourceRepository:
     return AuthorSourceRepository(db)
+
+def get_author_source_related_repository(
+    db: AsyncSession = Depends(get_db),
+) -> AuthorSourceRelatedRepository:
+    return AuthorSourceRelatedRepository(db)
 
 def get_penguin_index_repository(
     db: AsyncSession = Depends(get_db),
@@ -228,11 +227,6 @@ def get_author_photo_service(
 ) -> AuthorPhotoService:
     return AuthorPhotoService(repo, client)
 
-def get_anagrama_lookup_service(
-    repo: AnagramaRepository = Depends(get_anagrama_repository),
-) -> AnagramaLookupService:
-    return AnagramaLookupService(repo)
-
 async def get_penguin_client():
     client = PenguinClient()
     try:
@@ -244,8 +238,9 @@ def get_penguin_lazy_service(
     repo: AuthorSourceRepository = Depends(get_author_source_repository),
     index_repo: PenguinIndexRepository = Depends(get_penguin_index_repository),
     client: PenguinClient = Depends(get_penguin_client),
+    related_repo: AuthorSourceRelatedRepository = Depends(get_author_source_related_repository),
 ) -> PenguinLazyService:
-    return PenguinLazyService(repo, index_repo, client)
+    return PenguinLazyService(repo, index_repo, client, related_repo)
 
 async def get_asteroide_client():
     client = AsteroideClient()
@@ -258,12 +253,14 @@ def get_asteroide_lazy_service(
     repo: AuthorSourceRepository = Depends(get_author_source_repository),
     index_repo: AsteroideIndexRepository = Depends(get_asteroide_index_repository),
     client: AsteroideClient = Depends(get_asteroide_client),
+    related_repo: AuthorSourceRelatedRepository = Depends(get_author_source_related_repository),
 ) -> AsteroideLazyService:
-    return AsteroideLazyService(repo, index_repo, client)
+    return AsteroideLazyService(repo, index_repo, client, related_repo)
 
 def get_author_profile_lookup_service(
     repo: AuthorSourceRepository = Depends(get_author_source_repository),
+    related_repo: AuthorSourceRelatedRepository = Depends(get_author_source_related_repository),
     lazy: PenguinLazyService = Depends(get_penguin_lazy_service),
     asteroide_lazy: AsteroideLazyService = Depends(get_asteroide_lazy_service),
 ) -> AuthorProfileLookupService:
-    return AuthorProfileLookupService(repo, lazy, asteroide_lazy)
+    return AuthorProfileLookupService(repo, related_repo, lazy, asteroide_lazy)

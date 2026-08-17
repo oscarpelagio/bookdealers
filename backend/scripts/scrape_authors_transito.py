@@ -67,7 +67,6 @@ async def main() -> None:
                 slug=None,
                 description=profile.description,
                 image_url=profile.image_url,
-                extra=None,
             )
             ok += 1
 

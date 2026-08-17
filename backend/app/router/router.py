@@ -2,7 +2,7 @@
 
 from fastapi import APIRouter
 from app.auth.router import router as auth_router
-from app.router.endpoints import search_router, import_router, availability_router, books_router, author_photo_router, anagrama_router, author_profile_router, thumb_router, central_blog_router
+from app.router.endpoints import search_router, import_router, availability_router, books_router, author_photo_router, author_profile_router, thumb_router, central_blog_router
 from app.profiles.router import router as profiles_router
 from app.shelves.router import router as shelves_router
 from app.reviews.router import router as reviews_router
@@ -27,7 +27,6 @@ api_router.include_router(import_router, prefix="/import", tags=["Import"])
 api_router.include_router(availability_router, prefix="/availability", tags=["Availability"])
 api_router.include_router(books_router, prefix="/books", tags=["Books"])
 api_router.include_router(author_photo_router, prefix="/author-photo", tags=["Authors"])
-api_router.include_router(anagrama_router, prefix="/author-anagrama", tags=["Authors"])
 api_router.include_router(author_profile_router, prefix="/author-profile", tags=["Authors"])
 api_router.include_router(thumb_router, prefix="/thumb", tags=["Images"])
 api_router.include_router(central_blog_router, prefix="/blog-articles", tags=["La Central"])

@@ -8,7 +8,7 @@ Estratègia:
 5. Si no hi ha res, `found=False` → el front cau a Wikimedia.
 """
 
-from app.crud import AuthorSourceRepository
+from app.crud import AuthorSourceRelatedRepository, AuthorSourceRepository
 from app.models import AuthorSource
 from app.schemas import AuthorProfileLookup, PublisherRelatedItem
 from app.services import AsteroideLazyService, PenguinLazyService
@@ -24,10 +24,12 @@ class AuthorProfileLookupService:
     def __init__(
         self,
         repo: AuthorSourceRepository,
+        related_repo: AuthorSourceRelatedRepository,
         lazy: PenguinLazyService,
         asteroide_lazy: AsteroideLazyService,
     ) -> None:
         self.repo = repo
+        self.related_repo = related_repo
         self.lazy = lazy
         self.asteroide_lazy = asteroide_lazy
 
@@ -40,15 +42,15 @@ class AuthorProfileLookupService:
         for variant in variants:
             sources = await self.repo.sources_for(variant)
             if sources:
-                return self._to_lookup(self._pick(sources))
+                return await self._to_lookup(self._pick(sources))
 
         row = await self.lazy.resolve(author)
         if row is not None:
-            return self._to_lookup(row)
+            return await self._to_lookup(row)
 
         row = await self.asteroide_lazy.resolve(author)
         if row is not None:
-            return self._to_lookup(row)
+            return await self._to_lookup(row)
 
         return AuthorProfileLookup()
 
@@ -70,8 +72,8 @@ class AuthorProfileLookupService:
                     return source
         return sources[0]
 
-    @staticmethod
-    def _to_lookup(source: AuthorSource) -> AuthorProfileLookup:
+    async def _to_lookup(self, source: AuthorSource) -> AuthorProfileLookup:
+        related = await self.related_repo.for_source(source.author_key, source.editorial)
         return AuthorProfileLookup(
             found=True,
             editorial=source.editorial,
@@ -80,8 +82,19 @@ class AuthorProfileLookupService:
             description=source.description,
             image_url=source.image_url,
             extra=(
-                [PublisherRelatedItem(**item) for item in source.extra]
-                if source.extra
+                [
+                    PublisherRelatedItem(
+                        tipo=item.tipo,
+                        titulo=item.titulo,
+                        url=item.url,
+                        fecha=item.fecha,
+                        descripcion=item.descripcion,
+                        thumbnail=item.thumbnail,
+                        categoria=item.categoria,
+                    )
+                    for item in related
+                ]
+                if related
                 else None
             ),
         )

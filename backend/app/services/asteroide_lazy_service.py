@@ -15,7 +15,7 @@ from thefuzz import fuzz
 
 from app.adapters.asteroide_adapter import parse_profile
 from app.clients import AsteroideClient
-from app.crud import AsteroideIndexRepository, AuthorSourceRepository
+from app.crud import AsteroideIndexRepository, AuthorSourceRelatedRepository, AuthorSourceRepository
 from app.models import AsteroideAuthorIndex, AuthorSource
 from app.utils import NormalizationUtils
 
@@ -32,10 +32,12 @@ class AsteroideLazyService:
         repo: AuthorSourceRepository,
         index_repo: AsteroideIndexRepository,
         client: AsteroideClient,
+        related_repo: AuthorSourceRelatedRepository,
     ) -> None:
         self.repo = repo
         self.index_repo = index_repo
         self.client = client
+        self.related_repo = related_repo
 
     async def resolve(self, author: str) -> AuthorSource | None:
         author = (author or "").strip()
@@ -115,15 +117,16 @@ class AsteroideLazyService:
         if not name:
             return None
         try:
-            return await self.repo.upsert(
+            row = await self.repo.upsert(
                 author_key=author_key,
                 editorial=EDITORIAL,
                 name=name,
                 slug=entry.slug,
                 description=profile.description,
                 image_url=profile.image_url,
-                extra=None,
             )
+            await self.related_repo.replace(author_key, EDITORIAL, None)
+            return row
         except Exception:
             logger.exception("Fallo persistindo perfil Asteroide '%s'", author_key)
             return None

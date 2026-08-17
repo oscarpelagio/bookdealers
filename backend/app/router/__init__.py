@@ -17,7 +17,7 @@ from .dependencies import (
 	get_google_verifier,
 	require_roles,
 	get_author_photo_service,
-	get_anagrama_lookup_service,
+	get_author_source_related_repository,
 	get_author_profile_lookup_service,
 	get_central_article_repository,
 )

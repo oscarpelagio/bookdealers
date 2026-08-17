@@ -4,8 +4,9 @@
 - Descarrega i parseja els perfils en paral·lel (semàfor amb `workers`).
 - Si el servidor respon 429/403 (too many requests) avisa en stderr i
   ralentitza de forma adaptativa sense perdre el volcat.
-- Reanudable: salta els slugs ja descarregats (`fetched_at`) tret de
-  `refresh=True`.
+- Escriu directament a `author_source` (+ `author_source_related`) amb
+  `editorial='anagrama'`. Reanudable: salta els slugs ja descarregats
+  tret de `refresh=True`.
 """
 
 import asyncio
@@ -13,9 +14,11 @@ import time
 from dataclasses import dataclass, field
 
 from app.clients.anagrama_client import AnagramaClient, RateLimitedError
-from app.crud.anagrama_repository import AnagramaRepository
+from app.crud import AuthorSourceRelatedRepository, AuthorSourceRepository
+from app.utils import NormalizationUtils
 
 LETTERS = "abcdefghijklmnopqrstuvwxyz"
+EDITORIAL = "anagrama"
 
 
 @dataclass
@@ -30,7 +33,7 @@ class ScrapeStats:
 
 
 class AnagramaScraperService:
-    """Orquestador del volcat: índexs → perfils → BD.
+    """Orquestador del volcat: índexs → perfils → `author_source`.
 
     Cada worker obre la seva pròpia sessió perquè `AsyncSession` no és segura
     per a ús concurrent entre tasques.
@@ -104,7 +107,7 @@ class AnagramaScraperService:
         slugs = await self.collect_slugs(letters)
         if not refresh:
             async with self.session_factory() as db:
-                fetched = await AnagramaRepository(db).fetched_slugs()
+                fetched = await AuthorSourceRepository(db).slugs_for_editorial(EDITORIAL)
             pending = [s for s in slugs if s not in fetched]
         else:
             pending = list(slugs)
@@ -117,7 +120,7 @@ class AnagramaScraperService:
 
         semaphore = asyncio.Semaphore(self.workers)
 
-        async def process(slug: str, repo: AnagramaRepository) -> None:
+        async def process(slug: str, repo: AuthorSourceRepository, related_repo: AuthorSourceRelatedRepository) -> None:
             await self._wait_if_throttled()
             try:
                 profile = await self.client.get_profile(slug)
@@ -137,13 +140,23 @@ class AnagramaScraperService:
                 stats.failures.append((slug, repr(exc)))
                 return
 
+            author_key = NormalizationUtils.normalize_text(
+                NormalizationUtils.author_name_first(profile.name)
+            )
+            if not author_key:
+                stats.failed += 1
+                stats.failures.append((slug, "author_key buit"))
+                return
+
             await repo.upsert(
-                slug=slug,
+                author_key=author_key,
+                editorial=EDITORIAL,
                 name=profile.name,
+                slug=slug,
                 description=profile.description,
                 image_url=profile.image_url,
-                extra=profile.extra or None,
             )
+            await related_repo.replace(author_key, EDITORIAL, profile.extra or None)
             stats.ok += 1
             if profile.image_url:
                 stats.with_photo += 1
@@ -157,12 +170,13 @@ class AnagramaScraperService:
         async def worker() -> None:
             nonlocal done
             async with self.session_factory() as db:
-                repo = AnagramaRepository(db)
+                repo = AuthorSourceRepository(db)
+                related_repo = AuthorSourceRelatedRepository(db)
                 while True:
                     slug = await queue.get()
                     try:
                         async with semaphore:
-                            await process(slug, repo)
+                            await process(slug, repo, related_repo)
                     finally:
                         queue.task_done()
                         async with done_lock:
@@ -172,7 +186,7 @@ class AnagramaScraperService:
                                     f"[anagrama] {done}/{total} | ok={stats.ok} "
                                     f"fail={stats.failed} rate={stats.rate_limited}",
                                     flush=True,
-                            )
+                                )
         for slug in pending:
             queue.put_nowait(slug)
 
