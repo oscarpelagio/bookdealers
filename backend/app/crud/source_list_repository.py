@@ -4,7 +4,7 @@ from sqlalchemy.dialects.postgresql import insert
 from sqlmodel import select
 from sqlmodel.ext.asyncio.session import AsyncSession
 
-from app.models import SourceList, SourceListBook
+from app.models import Book, SourceList, SourceListBook
 
 DEFAULT_SOURCE = "lacentral"
 
@@ -128,11 +128,26 @@ class SourceListRepository:
             select(SourceListBook.posicion).where(SourceListBook.list_id == target.id)
         )
         have = {pos for (pos,) in existing.all()}
-        to_insert = [
-            {**row, "list_id": target.id}
-            for row in book_rows
-            if row["posicion"] not in have
-        ]
+
+        # book_id del seed resolt contra una altra BD (o obsolet) no existeix
+        # aquí: es posa a NULL i es resol per Z39.50 a la consulta.
+        wanted_ids = [row.get("book_id") for row in book_rows if row.get("book_id")]
+        if wanted_ids:
+            found = (
+                await self.db.exec(select(Book.id).where(Book.id.in_(wanted_ids)))
+            ).all()
+            valid_ids = {fid for (fid,) in found}
+        else:
+            valid_ids = set()
+
+        to_insert = []
+        for row in book_rows:
+            if row["posicion"] in have:
+                continue
+            entry = {**row, "list_id": target.id}
+            if entry.get("book_id") not in valid_ids:
+                entry["book_id"] = None
+            to_insert.append(entry)
         if to_insert:
             self.db.add_all(SourceListBook(**row) for row in to_insert)
             await self.db.commit()
