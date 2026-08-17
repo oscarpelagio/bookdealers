@@ -127,7 +127,7 @@ class SourceListRepository:
         existing = await self.db.exec(
             select(SourceListBook.posicion).where(SourceListBook.list_id == target.id)
         )
-        have = {pos for (pos,) in existing.all()}
+        have = set(existing.all())
 
         # book_id del seed resolt contra una altra BD (o obsolet) no existeix
         # aquí: es posa a NULL i es resol per Z39.50 a la consulta.
@@ -136,7 +136,7 @@ class SourceListRepository:
             found = (
                 await self.db.exec(select(Book.id).where(Book.id.in_(wanted_ids)))
             ).all()
-            valid_ids = {fid for (fid,) in found}
+            valid_ids = set(found)
         else:
             valid_ids = set()
 
