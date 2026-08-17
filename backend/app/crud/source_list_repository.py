@@ -112,6 +112,32 @@ class SourceListRepository:
         await self.db.commit()
         return max(result.rowcount or 0, 0)
 
+    async def bulk_upsert_books(
+        self, source: str, slug: str, book_rows: list[dict]
+    ) -> int:
+        """Insereix els llibres d'una llista si encara no existeixen.
+
+        Idempotent per (list_id, posicion): no esborra res, així que les
+        entrades ja resoltes (amb `book_id`) es conserven entre reinicis.
+        Retorna quants llibres s'han inserit.
+        """
+        target = await self.get_by_slug(slug, source)
+        if target is None or not book_rows:
+            return 0
+        existing = await self.db.exec(
+            select(SourceListBook.posicion).where(SourceListBook.list_id == target.id)
+        )
+        have = {pos for (pos,) in existing.all()}
+        to_insert = [
+            {**row, "list_id": target.id}
+            for row in book_rows
+            if row["posicion"] not in have
+        ]
+        if to_insert:
+            self.db.add_all(SourceListBook(**row) for row in to_insert)
+            await self.db.commit()
+        return len(to_insert)
+
     async def create_from_seed(self, slist: SourceList, books: list[dict]) -> SourceList:
         """Crea una llista amb els seus llibres (materialització perezosa)."""
         self.db.add(slist)

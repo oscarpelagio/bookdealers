@@ -91,6 +91,20 @@ async def _seed_source_lists() -> None:
                 for row in chunk
             ]
             await repo.bulk_upsert(rows)
+        # Després de bolcar les llistes, bolca els llibres de cada entrada del
+        # seed (idempotent per (list_id, posicion), preservant book_id resolts).
+        for row in data:
+            books = [
+                {
+                    "posicion": b["posicion"],
+                    "titulo_normalizado": b["titulo_normalizado"],
+                    "autor_normalizado": b["autor_normalizado"],
+                    "book_id": b.get("book_id"),
+                }
+                for b in row.get("books", [])
+            ]
+            if books:
+                await repo.bulk_upsert_books(row["source"], row["slug"], books)
     print(f"[source_list_seed] sourced_lists carregat ({len(data)} llistes).")
 
 
